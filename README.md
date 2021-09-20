@@ -36,7 +36,8 @@ Given that we have chosen to structure our ETL jobs in such a way as to isolate 
 
 To execute the example unit test for this project run,
 
-```pipenv run python -m unittest tests/test_*.py
+```
+pipenv run python -m unittest tests/test_*.py
 ```
 
 ### install pyspark
@@ -142,21 +143,7 @@ now we merge perdiction dataframe so we have for each cluster center prediction 
     # +--------------------+----------+------+------+
     # | clusterCenters array ----->  features | id
     # +--------------------+----------+------+------+
-    
-```
-    vecAssemblers = VectorAssembler(inputCols=[v for v in dfcenters.columns], outputCol="features")
-    dfcenters = vecAssemblers.transform(dfcenters)
-    dfcenters = dfcenters.coalesce(1).withColumn('id', monotonically_increasing_id().cast('integer'))
 
-    result = dfcenters.join(newdf, dfcenters.id == newdf.prediction, 'outer')
-    result = result.withColumnRenamed('count', 'weight').select('features', 'prediction', 'weight').sort('prediction')
-    # result.show(100)
-
-    # +--------------------+----------+------+
-    # | features           |prediction| weight |
-    # +--------------------+----------+------+
-```
-in result features are cluster centers
 
 
 ` makedataframe`: Converts any multidimensional data to a custom data frame regardless of the number of items.
@@ -179,33 +166,10 @@ def vectorModel(items):
     # print('list = ' + mylist.__str__())
     vecAssembler = VectorAssembler(inputCols=mylist, outputCol="features")
     return vecAssembler
-```   
+   
 
 merge Previous  Kmeans centers with more weight to next vectors
 
-```
- if n > 1:
-     vectors = customUnion(vector, result)
+customUnion(vector, result)
 
-```
--------
-merge tow dataframe 
-```
-def customUnion(df1, df2):
-    cols1 = df1.columns
-    cols2 = df2.columns
-    total_cols = sorted(cols1 + list(set(cols2) - set(cols1)))
 
-    def expr(mycols, allcols):
-        def processCols(colname):
-            if colname in mycols:
-                return colname
-            else:
-                return lit(None).alias(colname)
-
-        cols = map(processCols, allcols)
-        return list(cols)
-
-    appended = df1.select(expr(cols1, total_cols)).union(df2.select(expr(cols2, total_cols)))
-    return appended
-```
