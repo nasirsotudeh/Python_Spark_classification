@@ -106,12 +106,9 @@ class K_means(object):
         data.toPandas().to_csv(fullname, index=False)
 
     def vectorModel(self):
-        mylist = []
-        for item in range(0, self.items):
-            col = "f_{}".format(item)
-            mylist.append(col)
-        # print('list = ' + mylist.__str__())
-        vecAssembler = VectorAssembler(inputCols=mylist, outputCol="features")
+        # *
+        # * code
+        # *
         return vecAssembler
 
     def getdistFromsummary(self, df):
@@ -149,51 +146,19 @@ class K_means(object):
     # ##################################################
     def kmeansOnData(self, dataframe, K_cluster):
 
-        vector = dataframe.select('features', 'weight')
-        kmeans = KMeans(k=K_cluster, maxIter=1, featuresCol='features', initSteps=3, weightCol='weight')
-        kmm = kmeans.fit(vector)
-        centers = kmm.clusterCenters()
-        dist = kmm.distanceMeasure
-        print(dist)
-        print("_____________________")
-
-        # *** Get the cluster centers, represented as a list of NumPy arrays sorted by prediction
-        df = kmm.transform(vector)
-
-        df.show(300)
-        newdf = df.groupBy('prediction').sum('weight')
-        newdf = newdf.sort('prediction')
-        newdf.show(200)
-        print('***')
-        # '''
+       *
         # +----------+-----+
         # |prediction|count|
         # +----------+-----+
         # |         0|   38|
         #
-        # '''
-        dcenters = [e.tolist() for e in centers]
-        self.setDensVectors(dcenters)
-        dfcenters = self.sc.parallelize(dcenters).toDF([])
-        vecAssemblers = VectorAssembler(inputCols=[v for v in dfcenters.columns], outputCol="features")
-        dfcenters = vecAssemblers.transform(dfcenters)
-        dfcenters = dfcenters.coalesce(1).withColumn('id', monotonically_increasing_id().cast('integer'))
-
+        # **
+        # **
         # +--------------------+----------+------+------+
         # | clusterCenters array ----->  features | id
         # +--------------------+----------+------+------+
-        result = dfcenters.join(newdf, dfcenters.id == newdf.prediction, 'outer')
-        result.show()
-        result = result.withColumnRenamed('sum(weight)', 'weight').select('features', 'prediction', 'weight').sort('prediction')
-        result.show()
-        all_data = df.withColumnRenamed('weight', 'input_weight').join(result.withColumnRenamed('features', 'Centers'), on='prediction', how='left')
-        self.setDfCenters(all_data.select('Centers' , 'prediction'))
-
-        distance = self.getdistFromsummary(all_data)
-        distance.show(300, truncate=False)
-        print('*******************************************')
-        self.joinCenters(distance).show(1000 , truncate=False)
-        # result.show(100)
+        # **
+        # **
         # +--------------------+----------+------+
         # | features           |prediction| weight |
         # +--------------------+----------+------+
@@ -202,24 +167,13 @@ class K_means(object):
     # %%
     from pyspark.sql.functions import lit
 
-    #  getdistFromsummary ##################################################
 
     def customUnion(self, df1, df2):
         cols1 = df1.columns
         cols2 = df2.columns
-        total_cols = sorted(cols1 + list(set(cols2) - set(cols1)))
-
-        def expr(mycols, allcols):
-            def processCols(colname):
-                if colname in mycols:
-                    return colname
-                else:
-                    return lit(None).alias(colname)
-
-            cols = map(processCols, allcols)
-            return list(cols)
-
-        appended = df1.select(expr(cols1, total_cols)).union(df2.select(expr(cols2, total_cols)))
+        # **
+        # ** code
+        # **
         return appended
 
     # %%
